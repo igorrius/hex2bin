@@ -39,21 +39,24 @@ release: clean
 	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-amd64
 	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-arm64
 
-# Create release archives
 release-archives: release
 	@echo "Creating release archives..."
+	# Ensure a clean `dist` directory
+	rm -rf dist/*.tar.gz dist/*.zip
 	@if [ -n "$(TAR_CMD)" ]; then \
 		cd dist && \
 		tar -czf $(BINARY_NAME)-linux-amd64-$(VERSION).tar.gz $(BINARY_NAME)-linux-amd64 && \
 		tar -czf $(BINARY_NAME)-linux-arm64-$(VERSION).tar.gz $(BINARY_NAME)-linux-arm64 && \
 		tar -czf $(BINARY_NAME)-darwin-amd64-$(VERSION).tar.gz $(BINARY_NAME)-darwin-amd64 && \
-		tar -czf $(BINARY_NAME)-darwin-arm64-$(VERSION).tar.gz $(BINARY_NAME)-darwin-arm64; \
+		tar -czf $(BINARY_NAME)-darwin-arm64-$(VERSION).tar.gz $(BINARY_NAME)-darwin-arm64 || \
+		{ echo "Error: Failed to create tar archives"; exit 1; }; \
 	else \
 		echo "Warning: tar command not found. Skipping tar archives."; \
 	fi
 	@if [ -n "$(ZIP_CMD)" ]; then \
 		cd dist && \
-		zip $(BINARY_NAME)-windows-amd64-$(VERSION).zip $(BINARY_NAME)-windows-amd64.exe; \
+		zip $(BINARY_NAME)-windows-amd64-$(VERSION).zip $(BINARY_NAME)-windows-amd64.exe || \
+		{ echo "Error: Failed to create zip archive"; exit 1; }; \
 	else \
 		echo "Warning: zip command not found. Skipping Windows zip archive."; \
 	fi
