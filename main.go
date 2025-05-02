@@ -14,7 +14,7 @@ var (
 
 func main() {
 	if len(os.Args) != 4 {
-		fmt.Printf("hex2bin v%s (built %s)\n", version, buildTime)
+		fmt.Printf("hex2bin %s (built %s)\n", version, buildTime)
 		fmt.Println("Usage: hex2bin <input_file> <output_file> <mode>")
 		fmt.Println("Mode: 'bin2hex' for binary to Intel HEX conversion")
 		fmt.Println("      'hex2bin' for Intel HEX to binary conversion")
