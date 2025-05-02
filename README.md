@@ -44,33 +44,46 @@ go install github.com/igorrius/hex2bin@latest
 ## Usage
 
 The tool supports two conversion modes:
-
-1. Convert Intel HEX to binary:
-   ```bash
-   hex2bin input.hex output.bin hex2bin
-   ```
-
-2. Convert binary to Intel HEX:
-   ```bash
-   hex2bin input.bin output.hex bin2hex
-   ```
+- `hex2bin`: Intel HEX to binary
+- `bin2hex`: binary to Intel HEX
 
 ### Arguments
 
-- `input_file`: Path to the input file
-- `output_file`: Path to the output file
-- `mode`: Conversion mode (`hex2bin` or `bin2hex`)
+- `input_file`: Path to the input file (**required**)
+- `output_file`: Path to the output file (**optional**)
+- `mode`: Conversion mode (`hex2bin` or `bin2hex`, **optional**)
+
+If `output_file` is not provided, it will be automatically determined from the input file name and mode.
+If `mode` is not provided, it will be inferred from the input file extension:
+- `.hex` → `hex2bin`
+- `.bin` → `bin2hex`
+
+If both `output_file` and `mode` are omitted, both will be inferred from the input file extension.
 
 ### Examples
 
-Convert a HEX file to binary:
+#### Minimal (auto mode and output):
 ```bash
-hex2bin firmware.hex firmware.bin hex2bin
+hex2bin firmware.hex         # Converts to firmware.bin (mode: hex2bin)
+hex2bin firmware.bin         # Converts to firmware.hex (mode: bin2hex)
 ```
 
-Convert a binary file to HEX:
+#### Specify output file, auto mode:
 ```bash
-hex2bin firmware.bin firmware.hex bin2hex
+hex2bin firmware.hex my.bin  # Converts to my.bin (mode: hex2bin)
+hex2bin firmware.bin my.hex  # Converts to my.hex (mode: bin2hex)
+```
+
+#### Specify mode, auto output:
+```bash
+hex2bin firmware.hex hex2bin   # Converts to firmware.bin
+hex2bin firmware.bin bin2hex   # Converts to firmware.hex
+```
+
+#### Full explicit:
+```bash
+hex2bin firmware.hex out.bin hex2bin
+hex2bin firmware.bin out.hex bin2hex
 ```
 
 ## Building from Source
