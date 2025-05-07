@@ -58,24 +58,47 @@ func getModeFromInputExt(inputFile string) (string, error) {
 }
 
 func main() {
-	if len(os.Args) < 2 || len(os.Args) > 4 {
+	writeAll := false
+	recordSize := 16
+	args := os.Args[1:]
+	// Check for --all and --record-bytes flags
+	for i := 0; i < len(args); {
+		if args[i] == "--all" {
+			writeAll = true
+			args = append(args[:i], args[i+1:]...)
+			continue
+		}
+		if strings.HasPrefix(args[i], "--record-bytes=") {
+			var n int
+			_, err := fmt.Sscanf(args[i], "--record-bytes=%d", &n)
+			if err == nil && n > 0 {
+				recordSize = n
+			}
+			args = append(args[:i], args[i+1:]...)
+			continue
+		}
+		i++
+	}
+
+	if len(args) < 1 || len(args) > 3 {
 		fmt.Printf("hex2bin v%s (built %s)\n", version, buildTime)
-		fmt.Println("Usage: hex2bin <input_file> [output_file] [mode]")
+		fmt.Println("Usage: hex2bin <input_file> [output_file] [mode] [--all] [--record-bytes=N]")
 		fmt.Println("Mode: 'bin2hex' for binary to Intel HEX conversion")
 		fmt.Println("      'hex2bin' for Intel HEX to binary conversion")
+		fmt.Println("      '--all' to write all data (no sparse HEX, for bin2hex mode)")
+		fmt.Println("      '--record-bytes=N' to set bytes per HEX record (default 16, e.g., 16 or 32)")
 		os.Exit(1)
 	}
 
-	inputFile := os.Args[1]
+	inputFile := args[0]
 	outputFile := ""
 	mode := ""
 
-	if len(os.Args) == 4 {
-		outputFile = os.Args[2]
-		mode = os.Args[3]
-	} else if len(os.Args) == 3 {
-		// Could be output file or mode
-		arg := os.Args[2]
+	if len(args) == 3 {
+		outputFile = args[1]
+		mode = args[2]
+	} else if len(args) == 2 {
+		arg := args[1]
 		if arg == "bin2hex" || arg == "hex2bin" {
 			mode = arg
 			var err error
@@ -94,7 +117,6 @@ func main() {
 			}
 		}
 	} else {
-		// Only input file provided
 		var err error
 		mode, err = getModeFromInputExt(inputFile)
 		if err != nil {
@@ -111,7 +133,7 @@ func main() {
 	var err error
 	switch mode {
 	case "bin2hex":
-		err = converter.BinToIntelHex(inputFile, outputFile)
+		err = converter.BinToIntelHexWithMode(inputFile, outputFile, writeAll, recordSize)
 	case "hex2bin":
 		err = converter.IntelHexToBin(inputFile, outputFile)
 	default:
