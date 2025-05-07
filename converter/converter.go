@@ -46,50 +46,6 @@ func writeHexRecord(w io.Writer, recordType byte, address uint16, data []byte) e
 	return err
 }
 
-func BinToIntelHex(inputFile string, outputFile string) error {
-	// Read the binary input file
-	binData, err := os.ReadFile(inputFile)
-	if err != nil {
-		return fmt.Errorf("error reading input file: %v", err)
-	}
-
-	// Create output file
-	ofw, err := os.Create(outputFile)
-	if err != nil {
-		return fmt.Errorf("error creating output file: %v", err)
-	}
-	defer ofw.Close()
-
-	w := bufio.NewWriter(ofw)
-
-	// Write extended linear address record for the first segment
-	err = writeHexRecord(w, ExtLinearAddrRecord, 0x0000, []byte{0x00, 0x00})
-	if err != nil {
-		return fmt.Errorf("error writing extended address: %v", err)
-	}
-
-	// Write data records in 32-byte chunks
-	for i := 0; i < len(binData); i += 32 {
-		end := i + 32
-		if end > len(binData) {
-			end = len(binData)
-		}
-		chunk := binData[i:end]
-		err = writeHexRecord(w, DataRecord, uint16(i), chunk)
-		if err != nil {
-			return fmt.Errorf("error writing data chunk: %v", err)
-		}
-	}
-
-	// Write end of file record
-	err = writeHexRecord(w, EndOfFileRecord, 0x0000, nil)
-	if err != nil {
-		return fmt.Errorf("error writing EOF: %v", err)
-	}
-
-	return w.Flush()
-}
-
 func IntelHexToBin(inputFile string, outputFile string) error {
 	file, err := os.Open(inputFile)
 	if err != nil {
@@ -153,4 +109,75 @@ func IntelHexToBin(inputFile string, outputFile string) error {
 	}
 
 	return nil
+}
+
+// BinToIntelHexWithMode converts binary to Intel HEX, with a mode to write all data or only non-0xFF data
+// recordSize controls the number of bytes per HEX record (e.g., 16, 32)
+func BinToIntelHexWithMode(inputFile string, outputFile string, writeAll bool, recordSize int) error {
+	if recordSize <= 0 {
+		recordSize = 32
+	}
+	binData, err := os.ReadFile(inputFile)
+	if err != nil {
+		return fmt.Errorf("error reading input file: %v", err)
+	}
+
+	of, err := os.Create(outputFile)
+	if err != nil {
+		return fmt.Errorf("error creating output file: %v", err)
+	}
+	defer of.Close()
+
+	w := bufio.NewWriter(of)
+
+	// Write extended linear address record for the first segment
+	err = writeHexRecord(w, ExtLinearAddrRecord, 0x0000, []byte{0x00, 0x00})
+	if err != nil {
+		return fmt.Errorf("error writing extended address: %v", err)
+	}
+
+	if writeAll {
+		// Write all data in recordSize-byte chunks
+		for i := 0; i < len(binData); i += recordSize {
+			end := i + recordSize
+			if end > len(binData) {
+				end = len(binData)
+			}
+			chunk := binData[i:end]
+			err = writeHexRecord(w, DataRecord, uint16(i), chunk)
+			if err != nil {
+				return fmt.Errorf("error writing data chunk: %v", err)
+			}
+		}
+	} else {
+		// Improved sparse mode: write any chunk with at least one non-0xFF byte
+		for i := 0; i < len(binData); i += recordSize {
+			end := i + recordSize
+			if end > len(binData) {
+				end = len(binData)
+			}
+			chunk := binData[i:end]
+			write := false
+			for _, b := range chunk {
+				if b != 0xFF {
+					write = true
+					break
+				}
+			}
+			if write {
+				err = writeHexRecord(w, DataRecord, uint16(i), chunk)
+				if err != nil {
+					return fmt.Errorf("error writing data chunk: %v", err)
+				}
+			}
+		}
+	}
+
+	// Write end of file record
+	err = writeHexRecord(w, EndOfFileRecord, 0x0000, nil)
+	if err != nil {
+		return fmt.Errorf("error writing EOF: %v", err)
+	}
+
+	return w.Flush()
 }

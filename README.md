@@ -52,6 +52,8 @@ The tool supports two conversion modes:
 - `input_file`: Path to the input file (**required**)
 - `output_file`: Path to the output file (**optional**)
 - `mode`: Conversion mode (`hex2bin` or `bin2hex`, **optional**)
+- `--all`: (optional, for `bin2hex` only) Write all data, including 0xFF fill bytes, to the HEX file. By default, the tool writes only non-0xFF data (sparse HEX output).
+- `--record-bytes=N`: (optional, for `bin2hex` only) Set the number of bytes per HEX record (default: 16, e.g., 16 or 32).
 
 If `output_file` is not provided, it will be automatically determined from the input file name and mode.
 If `mode` is not provided, it will be inferred from the input file extension:
@@ -59,6 +61,30 @@ If `mode` is not provided, it will be inferred from the input file extension:
 - `.bin` → `bin2hex`
 
 If both `output_file` and `mode` are omitted, both will be inferred from the input file extension.
+
+### HEX Output Modes
+
+By default, when converting from binary to Intel HEX (`bin2hex`), the tool writes only non-0xFF data to the HEX file (sparse output). This matches the structure of reference HEX files and avoids unnecessary fill records.
+
+To force the tool to write all data (including 0xFF fill bytes) in the HEX file, use the `--all` flag:
+
+```bash
+hex2bin firmware.bin --all
+```
+
+To control the number of bytes per HEX record, use the `--record-bytes=N` flag (e.g., 16 or 32):
+
+```bash
+hex2bin firmware.bin --record-bytes=16
+```
+
+You can combine both flags:
+
+```bash
+hex2bin firmware.bin --all --record-bytes=16
+```
+
+This will produce a HEX file with records of the specified size (default is 16 bytes per record).
 
 ### Examples
 
@@ -107,3 +133,7 @@ hex2bin firmware.bin out.hex bin2hex
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgement
+
+This project was generated using only AI via the Cursor app.
