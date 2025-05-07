@@ -14,8 +14,8 @@ var (
 	buildTime = "unknown"
 )
 
-// getOutputFileName determines the output file name based on input file and mode
-func getOutputFileName(inputFile, mode string) (string, error) {
+// GetOutputFileName determines the output file name based on input file and mode
+func GetOutputFileName(inputFile, mode string) (string, error) {
 	ext := ""
 	switch mode {
 	case "bin2hex":
@@ -26,7 +26,22 @@ func getOutputFileName(inputFile, mode string) (string, error) {
 		return "", fmt.Errorf("cannot determine output file extension for mode '%s' (should be 'bin2hex' or 'hex2bin')", mode)
 	}
 	base := strings.TrimSuffix(inputFile, filepath.Ext(inputFile))
-	return base + ext, nil
+	output := base + ext
+
+	// Add suffix if file exists
+	if _, err := os.Stat(output); err == nil {
+		suffix := 1
+		for {
+			candidate := fmt.Sprintf("%s_%d%s", base, suffix, ext)
+			if _, err := os.Stat(candidate); os.IsNotExist(err) {
+				output = candidate
+				break
+			}
+			suffix++
+		}
+	}
+
+	return output, nil
 }
 
 // getModeFromInputExt tries to determine the mode from the input file extension
@@ -64,7 +79,7 @@ func main() {
 		if arg == "bin2hex" || arg == "hex2bin" {
 			mode = arg
 			var err error
-			outputFile, err = getOutputFileName(inputFile, mode)
+			outputFile, err = GetOutputFileName(inputFile, mode)
 			if err != nil {
 				fmt.Printf("Error: %v\n", err)
 				os.Exit(1)
@@ -86,7 +101,7 @@ func main() {
 			fmt.Printf("Error: %v\n", err)
 			os.Exit(1)
 		}
-		outputFile, err = getOutputFileName(inputFile, mode)
+		outputFile, err = GetOutputFileName(inputFile, mode)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 			os.Exit(1)
