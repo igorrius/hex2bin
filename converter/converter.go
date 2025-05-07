@@ -113,19 +113,43 @@ func IntelHexToBin(inputFile string, outputFile string) error {
 		return fmt.Errorf("no data segments found in Intel HEX file")
 	}
 
+	// Find the lowest and highest addresses
+	minAddr := segments[0].Address
+	maxAddr := segments[0].Address + uint32(len(segments[0].Data))
+	for _, segment := range segments {
+		if segment.Address < minAddr {
+			minAddr = segment.Address
+		}
+		endAddr := segment.Address + uint32(len(segment.Data))
+		if endAddr > maxAddr {
+			maxAddr = endAddr
+		}
+	}
+
+	// Create a buffer filled with 0xFF
+	totalLen := maxAddr - minAddr
+	binData := make([]byte, totalLen)
+	for i := range binData {
+		binData[i] = 0xFF
+	}
+
+	// Copy each segment's data into the buffer
+	for _, segment := range segments {
+		start := segment.Address - minAddr
+		copy(binData[start:start+uint32(len(segment.Data))], segment.Data)
+	}
+
 	// Create output file
-	ofw, err := os.Create(outputFile)
+	of, err := os.Create(outputFile)
 	if err != nil {
 		return fmt.Errorf("error creating output file: %w", err)
 	}
-	defer ofw.Close()
+	defer of.Close()
 
-	// Write binary data in order of addresses
-	for _, segment := range segments {
-		_, err = ofw.Write(segment.Data)
-		if err != nil {
-			return fmt.Errorf("error writing binary data: %v", err)
-		}
+	// Write the buffer to the file
+	_, err = of.Write(binData)
+	if err != nil {
+		return fmt.Errorf("error writing binary data: %v", err)
 	}
 
 	return nil
