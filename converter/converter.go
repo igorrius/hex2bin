@@ -46,10 +46,6 @@ func writeHexRecord(w io.Writer, recordType byte, address uint16, data []byte) e
 	return err
 }
 
-func BinToIntelHex(inputFile string, outputFile string) error {
-	return BinToIntelHexWithMode(inputFile, outputFile, false, 32)
-}
-
 func IntelHexToBin(inputFile string, outputFile string) error {
 	file, err := os.Open(inputFile)
 	if err != nil {
